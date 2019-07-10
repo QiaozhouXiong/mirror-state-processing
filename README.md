@@ -6,7 +6,7 @@ This repository is served as the platform for sharing the codes of miror state p
 **Mirror state constraint reveals that the polarization evovlement in an reciprocal and unitary system always tends to pass through a specific polarizatio state and this constraint simpliies the local retardation reconstruction.** This project demonstrates the process of local retardation reconstruction with single polarization state. Also, we compared the results with that of benchmark dual input processing.
 
 #V1.0
-Drafted by Qiaozhou Xiong, Nanyan Technological University. 
+Drafted by Qiaozhou Xiong, Nanyang Technological University. 
 
 To run this version, you need corresponding cardiovascular dataset. Sample dataset will be uploaded in latter version. Tool box developed by Brett E. Bouma group is required to run the codes.
 
