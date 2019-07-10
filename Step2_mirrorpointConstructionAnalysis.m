@@ -35,17 +35,12 @@ h = filterGen(pst.fwx).';
 Ret1 = []; Ret2 = []; Ret3 = [];Rel2 = []; Rel3 = [];
 set(0,'DefaultFigureVisible', 'off');
 MPindex = 1:43;
-filesNotInclude = [26 34];
 fileNo = 0;
 for fInd = 1:length(MsmtR)
     fInd
-    
     path = fullfile(sourcePath,MsmtR{fInd}(1:6),MsmtR{fInd});
     temp = contains(DataSetName,string(MsmtR{fInd}));
     MPfIndex = MPindex(temp);
-    if any(filesNotInclude(:)==MPfIndex)
-        fileNo = fileNo+1;
-    end
     %% mirror state
     pst.MP1 = squeeze(MP1s(MPfIndex,:,:));pst.MP2 = squeeze(MP2s(MPfIndex,:,:));
     [S1,S2] = recstrTom(path,[1,1]*SliceR(fInd),st);
