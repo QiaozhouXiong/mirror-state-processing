@@ -1,11 +1,28 @@
 function out = MirrorStateProcessAcc(S1,S2,pst)
-%% this function use accurate mode
-
+% Compute local retardation with single channel and generate a compound
+% estimated reliability.
+%
+% S1,S2: the Stokes vectors of the two polarization channels
+%
+% pst.MP1, pst.MP2, mirror state of the two polarization channels
+%
+% pst.fwx, kernel size for lateral fitering
+%
+% pst.dz, the axial shift applied to stokes vector for rotation vector
+% reasoning.
+%
+% pst.clipLimit, the lower surface of the sheath, removed from the analysis
+%
+%
+% laste updated at 10 July 2o19 by Qiaozhou Xiong (E150022@e.ntu.edu.sg)
+%% mirror point prepartion
 dim = size(S1);
 MP1(1,1,:,:) = pst.MP1;
 MP1 = repmat(MP1,[1024, dim(2), 1, 1]);
 MP2(1,1,:,:) = pst.MP2;
 MP2 = repmat(MP2,[1024, dim(2), 1, 1]);
+%%
+%-define a threshold to mask the area for the correction matrix calculation
 MPAthre = 0.5;
 fwx = pst.fwx;
 dz = pst.dz;
@@ -18,32 +35,30 @@ I2 = imfilter(sqrt(sum(S2.^2,4)),h,'circular');
 
 If1 = sqrt(dot(S1f,S1f,4));
 If2 = sqrt(dot(S2f,S2f,4));
-
+%% estimate the SNR
 SNRmetric1 = bsxfun(@minus,10*log10(I1),mean(mean(10*log10(I1(600:800,:,:)),1),2));
 SNRmetric2 = bsxfun(@minus,10*log10(I2),mean(mean(10*log10(I2(600:800,:,:)),1),2));
 
-% 
+% dop calculation
 dop1 = If1./I1;
 dop2 = If2./I2;
-
+% normalization
 S1n = S1f./repmat(If1,[1,1,1,3]);
 S2n = S2f./repmat(If2,[1,1,1,3]);
-
-% Generate mask, based on DOP, and excluding the first and last depth
-% pixels.
+% Generate mask, based on DOP, and excluding the first and last depth pixels.
 mask = mean(dop1,3)>.8;
 mask(1:clipLimit,:) = 0;
 mask(end-clipLimit:end,:) = 0;
 diat = dot(squeeze(S1n(:,:,5,:)),squeeze(S2n(:,:,5,:)),3);
 diat(~mask) = 0;
-out.diat = diat;
+out.diat = diat; % for the diattenuation check
 %% mirror point reconstruction 1 we used more accurate method here
 sPlus = circshift(S1n,-dz);% Should be Nz by NAlines by 3
 sMinus= circshift(S1n,dz);
 vp = sPlus-sMinus;
 dvu = MP1-sPlus;
 tau = cross(vp,dvu,4);
-%% normalize
+%% normalize 
 tau = tau./sqrt(sum(tau.^2,4));
 ret = atan2(sum(cross(sPlus,sMinus,4).*tau,4),(sum(sPlus.*sMinus,4)-sum(tau.*sPlus,4).^2));
 tau = tau.*ret;

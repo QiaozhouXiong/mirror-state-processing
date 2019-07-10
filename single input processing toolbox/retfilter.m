@@ -1,4 +1,15 @@
 function retmean = retfilter(imIn,width,weight,maskIn)
+% compute the compund retardation in the ROI defined by 300um diameter
+% circle.
+%
+% input: imIn, the input data waiting for averaging in two dimension
+%        width, the width defines the diameter of the circle
+%        weight, the reliability weight for the avearging
+%        maskIn, the mask for the avearging, equal to weight by default
+%
+% output: retmean: the averaged retardatio in a array
+% latest version: 10 July
+
 if nargin < 4
     maskIn = weight;
 end

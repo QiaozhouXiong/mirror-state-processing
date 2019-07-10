@@ -3,7 +3,7 @@ cd('D:\mirror state processing')
 load('FilesR1.mat');
 sourcePath = 'D:\MGH DATA\SharingData';
 DataSetName = importdata('FilesNameForComparison.mat');
-addpath('D:\Single input intravascular polarimetry with mirror state\single input processing toolbox')
+addpath('D:\mirror state processing\single input processing toolbox')
 %% choose what reliablility metric to be used
 relMetric = 'dist';  % sina means using reliability metric associated with sina, and dist means using metric associated with distance metric
 if strcmp(relMetric,'sina')
@@ -16,7 +16,6 @@ end
 pst.Apval = Apval; pst.Bpval = Bpval;
 %%
 makeOrth = 0; %% no making orthognal, this feature was used for testing and will be removed in the nearly future.
-MSrel = importdata('MSrel.mat');
 %%load mirror state
 load('Binned Mirror state.mat')
 outcomeName = 'normal';
@@ -48,7 +47,7 @@ for fInd = 1:length(MsmtR)
         fileNo = fileNo+1;
     end
     %% mirror state
-    pst.MP1 = squeeze(MP1s(MPfIndex,:,:));pst.MP2 = squeeze(MP2s(MPfIndex,:,:));pst.MPrel = squeeze(MSrel(MPfIndex,:,:));
+    pst.MP1 = squeeze(MP1s(MPfIndex,:,:));pst.MP2 = squeeze(MP2s(MPfIndex,:,:));
     [S1,S2] = recstrTom(path,[1,1]*SliceR(fInd),st);
     %%----filtering
     S1f = imfilter(S1,h,'circular');S2f = imfilter(S2,h,'circular');
@@ -67,7 +66,7 @@ for fInd = 1:length(MsmtR)
     out1input = MirrorStateProcessAcc(S1,S2,pst);
 %     out1input = MirrorStateProcess_NewSina(S1,S2,pst);
     %-------cmparison validataion
-    out2 = comVisualizationR_new(int,out2input,out1input,pst,1);
+    out2 = comVisualization(int,out2input,out1input,pst,1);
     dirOig = pwd;
     cd(['D:\SingleInputProcessingResults\', resultFolderName]);
     cd('Numerical'); 
@@ -84,7 +83,7 @@ for fInd = 1:length(MsmtR)
     Rel2 = cat(1,out2.rel2,Rel2);
     Rel3 = cat(1,out2.rel3,Rel3);
     if length(Ret1) ~= length(Ret3)
-        fileMark(fInd) = 1;
+        break; % break if there is something wrong
     end
 end
 %%
@@ -92,6 +91,6 @@ mkdir(resultFolderName)
 cd(resultFolderName)
 save([resultFolderName,'DermingAndPearson'],'Slope','Corr');
 save([resultFolderName,'Data'],'Ret1','Ret2','Ret3','Rel2','Rel3')
-plotdrawR2_NewDis(Ret1, Ret2, Ret3, Rel2, Rel3,0);
+compoundPersonABplot(Ret1, Ret2, Ret3, Rel2, Rel3,0);
 set(gcf,'Position',[200 200 1000,700])
 saveas(gcf,[resultFolderName,outcomeName,'.bmp'])

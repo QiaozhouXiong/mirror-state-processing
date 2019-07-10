@@ -1,10 +1,16 @@
-function out = comVisualizationR_new(int,out2input,out1input,pst,n)
-%% comVisualizationR makes the visualizatin of the comparison between the 
-%benchmark two input processing(out2input)
-%single input processing(out1input).
-%parameters description
-% int: intensity image of the slice
-% pst: ps processing parameters
+function out = comVisualization(int,out2input,out1input,pst,n)
+% Visualize the comparison between the benchmark two input processing(out2input) and single input processing(out1input).
+%
+% input:  int: intensity image of the slice
+%         pst: ps processing parameters
+%         pst.offset: the offset to tranform the figure into cartisian
+%         coordinate
+%         n: the figure index, 2 by default. if n is eual to n, generate
+%         the sepearte figures for latter processing
+%
+% output: The compound retardation in the ROI defined by 300um diameter of dual inputs and single input,
+%         and compound reliability of single input.
+% 
 %%-------------------------------------------------------------------------
 
 if nargin<5

@@ -1,4 +1,17 @@
 function out = twoinputCom(out2input,out2inputD,pst,n)
+% compare the results of subsampled two input processing with benchmark
+% processing.
+%
+% inputs: out2input, the results of dual input processing
+%         out2inputD, the subsampled couterparts
+%         pst. processing parameters
+%         n, figure index, n = 1 by default.
+%
+% output: the compound averaged retardation
+%
+% latest version at 10 July
+%--------------------------------------------------------------------------
+
 if nargin<4
     n = 1;
 end

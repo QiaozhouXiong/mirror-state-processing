@@ -1,12 +1,24 @@
-function out = plotdrawR2(Ret1, Ret2, Ret3, Rel2, Rel3, relTh, n)
-%% compare the single input processing with two input processing, and compare the single input processing in two channels
-%% revsion compared with plotdrawR
+function out = compoundPersonABplot(Ret1, Ret2, Ret3, Rel2, Rel3, relTh, n)
+% COmpare the single input processing with two input processing, and
+% compare the single input processing in two channels in the way of Perason
+% correlation and Bland-Altman plot
+% 
+% features added in this version
 % 1. using scatting to add hue to the measuremnt in regresssion
 % 2. add the comparison between two channel single input processing
-%% input args:
+%
+% input args:
 % Ret1, Ret2, Ret3, two input procesing, single input processing with s1
 % and S2, respectively.
+%
 % Rel2, Rel3, the averaged measurement reliability of the measurement
+%
+% relTh, relTh threshold, 0 percent by default
+%
+% n, figure number, if 0 means generate seperate figures for latter
+% processing. single figure by default, namely n = 4.
+%
+% lastest version updated at 10 July 10 2019 by Qiaozhou Xiong
 
 if nargin<4
     Rel2 = ones(size(Ret2));
@@ -29,8 +41,19 @@ end
 a = .95;
 figure(n); clf
 % calculate the cutoff limit
-Rel2mask = Rel2>=relTh;
-Rel3mask = Rel3>=relTh;
+% Rel2 = mat2gray((1./(sqrt(Rel2))), [0.02, 0.2]);
+% Rel3 = mat2gray((1./(sqrt(Rel3))), [0.02, 0.2]);
+Rel2 = (1./(sqrt(Rel2)));
+Rel3 = (1./(sqrt(Rel3)));
+sampleNo = length(Rel3);
+Rel2Sorted = sort(Rel2);
+Rel3Sorted = sort(Rel3);
+
+Rel2Th = Rel2Sorted(round((1-relTh)*sampleNo));
+Rel3Th = Rel3Sorted(round((1-relTh)*sampleNo));
+
+Rel2mask = Rel2<=Rel2Th;
+Rel3mask = Rel3<=Rel3Th;
 %% compare how similar
 if flag
     ax1 = figure(1);
@@ -40,9 +63,10 @@ else
 end
 
 hold on;
-scatter(Ret1,Ret2,2,Rel2)
+scatter(Ret1,Ret2,2,mat2gray(Rel2,double([prctile(Rel2,10), prctile(Rel2,90)])))
 colormap(ax1,ametrine(256)); 
-hc = colorbar; set(hc,'Ytick', [0 1])
+hc = colorbar; 
+set(hc,'Ytick', [0 1])
 b = deming(Ret1(Rel2mask),Ret2(Rel2mask));
 x = linspace(0,2e-3,200);
 y = x*b(2)+b(1);
@@ -50,8 +74,8 @@ plot(x,y,'k-','linewidth',0.5);
 corrIdx = corrcoef(Ret1(Rel2mask),Ret2(Rel2mask));
 correlation = corrIdx(2,1);
 xlabel('\Deltan_1_2'); ylabel('\Deltan_1'); axis([0,2e-3,0,2e-3])
-text(0.2e-3,1.9e-3,sprintf('a=%1.2g',b(2)),'Color','red')
-text(0.2e-3,1.7e-3,sprintf('r=%1.2g',correlation),'Color','red')
+text(0.2e-3,1.9e-3,sprintf('a=%1.2g',b(2)),'Color','black')
+text(0.2e-3,1.7e-3,sprintf('r=%1.2g',correlation),'Color','black')
 %title('ret1 ret2 correlation'); 
 axis xy; axis square; box on
 
@@ -92,6 +116,7 @@ text(1.2e-3,double(LoAplus+1e-4),num2str(LoAplus,2),'Color','w')
 plot(linspace(0,2e-3,500),LoAminus*ones(500,1),'w--','lineWidth',1);
 text(0.0,double(LoAminus-.5e-4),'LoA(-)','Color','w')
 text(1.2e-3,double(LoAminus-.5e-4),num2str(LoAminus,2),'Color','w');
+%%
 out.slope1 = b(2);
 out.Corr1 = correlation;
 out.LoA1 = LoAplus-LoAminus;
@@ -105,7 +130,7 @@ else
     ax3 = subplot(3,2,3);
 end
 hold on;
-scatter(Ret1,Ret3,2,Rel3)
+scatter(Ret1,Ret3,2,mat2gray(Rel3,double([prctile(Rel3,10), prctile(Rel3,90)])))
 colormap(ax3, ametrine(256));
 hc = colorbar; set(hc,'Ytick', [0 1])
 b = deming(Ret1(Rel3mask),Ret3(Rel3mask));
@@ -115,8 +140,8 @@ plot(x,y,'k-','linewidth',0.5);
 corrIdx = corrcoef(Ret1(Rel3mask),Ret3(Rel3mask));
 correlation = corrIdx(2,1);
 xlabel('\Deltan_1_2'); ylabel('\Deltan_2'); axis([0,2e-3,0,2e-3])
-text(0.2e-3,1.9e-3,sprintf('a=%1.2g',b(2)),'Color','red')
-text(0.2e-3,1.7e-3,sprintf('r=%1.2g',correlation),'Color','red')
+text(0.2e-3,1.9e-3,sprintf('a=%1.2g',b(2)),'Color','black')
+text(0.2e-3,1.7e-3,sprintf('r=%1.2g',correlation),'Color','black')
 % title('ret1 ret3 correlation');
 axis xy; axis square; box on
 
@@ -170,8 +195,8 @@ else
 end
 
 hold on;
-scatter(Ret2,Ret3,2,(Rel2+Rel3)./2)
-colormap(ax3, ametrine(256));
+scatter(Ret2,Ret3,2,mat2gray((Rel2+Rel3)./2,double([prctile((Rel2+Rel3)./2,10), prctile((Rel2+Rel3)./2,90)])))
+colormap(ax5, ametrine(256));
 hc = colorbar; set(hc,'Ytick', [0 1])
 b = deming(Ret2(Rel3mask),Ret3(Rel3mask));
 x = linspace(0,2e-3,200);
@@ -180,8 +205,8 @@ plot(x,y,'k-','linewidth',0.5);
 corrIdx = corrcoef(Ret2(Rel3mask),Ret3(Rel3mask));
 correlation = corrIdx(2,1);
 xlabel('\Deltan_1'); ylabel('\Deltan_2'); axis([0,2e-3,0,2e-3])
-text(0.2e-3,1.9e-3,sprintf('a=%1.2g',b(2)),'Color','red')
-text(0.2e-3,1.7e-3,sprintf('r=%1.2g',correlation),'Color','red')
+text(0.2e-3,1.9e-3,sprintf('a=%1.2g',b(2)),'Color','black')
+text(0.2e-3,1.7e-3,sprintf('r=%1.2g',correlation),'Color','black')
 % title('ret1 ret3 correlation');
 axis xy; axis square; box on
 
