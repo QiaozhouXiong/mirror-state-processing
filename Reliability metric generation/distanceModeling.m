@@ -1,19 +1,20 @@
 %%
 clear A B
-D_select_idx = 25;
-SNR_select_idx = 10;
-xD = (Dbins(D_select_idx:end-1)+Dbins(D_select_idx+1:end))/2;ySNR = SNR(SNR_select_idx:end);
-zsigErr = sigErr(D_select_idx:end,SNR_select_idx:end);
-figure(11);clf;subplot(2,3,1);plot(xD,zsigErr');xlabel('D'); ylabel('Ret');title(sprintf('Std error'));hold on;
+xD = (Dbins(1:end-1)+Dbins(1+1:end))/2;ySNR = SNR;
+zsigErr = sigErr;
+figure(3);clf;subplot(2,3,1);plot(xD,zsigErr');xlabel('D'); ylabel('Ret');title('Std error');hold on; axis([0 2 0 10])
+ft = fittype('1/(a*x+b)');
+stdTh = linspace(1,1.1,length(ySNR));
 for index = 1:numel(ySNR)
-    ft = fittype('1/(a*x+b)');
-    StartPoint = [1,2];
     z = zsigErr(:,index);
-    [f, gofl] = fit(xD.',z,ft,'StartPoint',StartPoint);
+    ind = z<stdTh(index);
+    StartPoint = [1,2];
+    [f, gofl] = fit(xD(ind).',z(ind),ft,'StartPoint',StartPoint);
     A(index) = f.a; B(index) = f.b;
 %     C(index) = f.c; D(index) = f.d;
     plot(f,'--');legend off
 end
+
 subplot(2,3,2);
 plot(ySNR,A.');hold on;
 xlabel('SNR')
@@ -33,18 +34,18 @@ legend('b','mean value','2-order fitting','3-order fitting')
 
 %%
 subplot(2,3,[4 5 6]);
-D_select_idx = 1;
-xD_orig = (Dbins(D_select_idx:end-1)+Dbins(D_select_idx+1:end))/2;
-plot(xD_orig,sigErr(D_select_idx:end,:))
 xlabel('D')
 ylabel('Ret')
 title(sprintf('Std error'));
 hold on;
 %%
 Apval = fitA3; Bpval = fitB3;
-for index = 1:length(SNR)
-    snr = SNR(index);
-    retstdfit = 1./(polyval(Apval,snr)*xD_orig+polyval(Bpval,snr));
-    plot(xD_orig,retstdfit,'--')
+xD0 = linspace(0.0,2,50);
+SNR0 = linspace(6,35,41);
+for index = 1:length(SNR0)
+    snr = SNR0(index);
+    retstdfit = 1./(polyval(Apval,snr)*xD0+polyval(Bpval,snr));
+    plot(xD0,retstdfit,'--')
 end
+axis([0,2,0,100])
 save('RelMetdistance','Apval','Bpval')

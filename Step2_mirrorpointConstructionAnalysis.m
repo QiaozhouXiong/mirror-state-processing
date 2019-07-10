@@ -1,17 +1,27 @@
 clear
-cd('D:\mirror state processing\single input processing toolbox')
+cd('D:\mirror state processing')
 load('FilesR1.mat');
 sourcePath = 'D:\MGH DATA\SharingData';
 DataSetName = importdata('FilesNameForComparison.mat');
 addpath('D:\Single input intravascular polarimetry with mirror state\single input processing toolbox')
-
+%% choose what reliablility metric to be used
+relMetric = 'dist';  % sina means using reliability metric associated with sina, and dist means using metric associated with distance metric
+if strcmp(relMetric,'sina')
+    load('D:\mirror state processing\Reliability metric generation\RelMetsina.mat')
+    pst.relm = 'sina';
+else
+    load('D:\mirror state processing\Reliability metric generation\RelMetdistance.mat')
+    pst.relm = 'dist';
+end
+pst.Apval = Apval; pst.Bpval = Bpval;
+%%
 makeOrth = 0; %% no making orthognal, this feature was used for testing and will be removed in the nearly future.
 MSrel = importdata('MSrel.mat');
 %%load mirror state
 load('Binned Mirror state.mat')
 outcomeName = 'normal';
 %%create a folder for the results repository
-resultFolderName = ['Intravascular ', datestr(now,29),'productDist'];
+resultFolderName = ['Intravascular ', datestr(now,29), relMetric];
 preDir = pwd; cd('D:\SingleInputProcessingResults');mkdir(resultFolderName);cd(resultFolderName);mkdir('Numerical');mkdir('images');cd(preDir);
 %% -------------------------------------------------------------------------------------------------------------------
 %%processing parameters setting
@@ -54,7 +64,7 @@ for fInd = 1:length(MsmtR)
     %----- benchmark two input processing
     out2input = PSProcessLocal(S1,S2,pst);
     %------single input processing
-    out1input = MirrorStateProcessA_NewDis(S1,S2,pst);
+    out1input = MirrorStateProcessAcc(S1,S2,pst);
 %     out1input = MirrorStateProcess_NewSina(S1,S2,pst);
     %-------cmparison validataion
     out2 = comVisualizationR_new(int,out2input,out1input,pst,1);
