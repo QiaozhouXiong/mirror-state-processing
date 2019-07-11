@@ -13,8 +13,14 @@ function out = MirrorStateProcessAcc(S1,S2,pst)
 %
 % pst.clipLimit, the lower surface of the sheath, removed from the analysis
 %
+% pst.mode, using accurate method or using approximate method, accuarate by
+% defualt
 %
 % laste updated at 10 July 2o19 by Qiaozhou Xiong (E150022@e.ntu.edu.sg)
+if ~isfield(pst, 'mode')
+    pst.mode = 'accurate';
+end
+mode = pst.mode;
 %% mirror point prepartion
 dim = size(S1);
 MP1(1,1,:,:) = pst.MP1;
@@ -52,23 +58,32 @@ mask(end-clipLimit:end,:) = 0;
 diat = dot(squeeze(S1n(:,:,5,:)),squeeze(S2n(:,:,5,:)),3);
 diat(~mask) = 0;
 out.diat = diat; % for the diattenuation check
-%% mirror point reconstruction 1 we used more accurate method here
+%%
 sPlus = circshift(S1n,-dz);% Should be Nz by NAlines by 3
 sMinus= circshift(S1n,dz);
-vp = sPlus-sMinus;
-dvu = MP1-sPlus;
-tau = cross(vp,dvu,4);
-%% normalize 
-tau = tau./sqrt(sum(tau.^2,4));
-ret = atan2(sum(cross(sPlus,sMinus,4).*tau,4),(sum(sPlus.*sMinus,4)-sum(tau.*sPlus,4).^2));
-tau = tau.*ret;
+%% mirror point reconstruction 1 we used more accurate method here
+if strcmp(mode,'approximate')
+    vp = sPlus-sMinus;
+    v = (sPlus+sMinus)/2;
+    dvu = MP1-v;
+    dotVMP = v(:,:,:,1).*MP1(:,:,:,1) + v(:,:,:,2).*MP1(:,:,:,2) + v(:,:,:,3).*MP1(:,:,:,3);
+    tau = bsxfun(@rdivide,cross(vp,dvu,4),1-dotVMP)/2/dz;
+else
+    vp = sPlus-sMinus;
+    dvu = MP1-sPlus;   %%here used to be MP1-(sPlus+sMins)/2. But it should be MP1-sMinus or MP1-sPlus
+    tau = cross(vp,dvu,4);
+    %% normalize
+    tau = tau./sqrt(sum(tau.^2,4));
+    ret = atan2(sum(cross(sPlus,sMinus,4).*tau,4),(sum(sPlus.*sMinus,4)-sum(tau.*sPlus,4).^2));
+    tau = tau.*ret/2/dz;
+end
+%%
 sina = sqrt(sum((cross(tau,sPlus,4)./sqrt(sum(tau.^2,4))./sqrt(sum(sPlus.^2,4))).^2,4));
-%% There are three ways to qunatify the distance
+%we use the distance mean instead of product
 relW = (normalizeStokes(sPlus-MP1) + normalizeStokes(sMinus-MP1))/2;
-% relW = normalizeStokes(dvu);
 % select area with good reliability to calcualte rotation matrix
 maskMpa = relW>MPAthre;
-% now, align the spectral bins
+%%  now, align the spectral bins
 % mask out regions with low reliability
 dim = size(tau);
 mid = ceil(dim(3)/2);
@@ -128,30 +143,38 @@ tauErr(repmat(mask,[1 1 3])) = 0;
 out.binError1 = sum(squeeze(sum(tauErr)));
 
 out.rcorrglobal1 = rcorrglobal;
-ret1 = sqrt(sum(taumean.^2,3))*0.0239/2/dz;
+ret1 = sqrt(sum(taumean.^2,3))*0.0239;
 out.ret1 = ret1;
 %% reconstruction with channel 2
 sPlus = circshift(S2n,-dz);% Should be Nz by NAlines by 3
 sMinus= circshift(S2n,dz);
-vp = sPlus-sMinus;
+if strcmp(mode,'approximate')
+    vp = sPlus-sMinus;
+    v = (sPlus+sMinus)/2;
+    dvu = MP2-v;
+    dotVMP = v(:,:,:,1).*MP2(:,:,:,1) + v(:,:,:,2).*MP2(:,:,:,2) + v(:,:,:,3).*MP2(:,:,:,3);
+    tau = bsxfun(@rdivide,cross(vp,dvu,4),1-dotVMP)/2/dz;
+else
+    vp = sPlus-sMinus;
+    dvu = MP2-sPlus;   %%here used to be MP1-(sPlus+sMins)/2. But it should be MP1-sMinus or MP1-sPlus
+    tau = cross(vp,dvu,4);
+    %% normalize
+    tau = tau./sqrt(sum(tau.^2,4));
+    ret = atan2(sum(cross(sPlus,sMinus,4).*tau,4),(sum(sPlus.*sMinus,4)-sum(tau.*sPlus,4).^2));
+    tau = tau.*ret/2/dz;
+end
 
-dvu = MP2-sPlus;
-tau = cross(vp,dvu,4);
-taunorm = sqrt(sum(tau.^2,4));
-tau = tau./taunorm;
-ret = atan2(sum(cross(sPlus,sMinus,4).*tau,4),(sum(sPlus.*sMinus,4)-sum(tau.*sPlus,4).^2));
-tau = tau.*ret;
-%%
-mask = mean(dop2,3)>.8;
-mask(1:clipLimit,:) = 0;
-mask(end-clipLimit:end,:) = 0;
 sina = sqrt(sum((cross(tau,sPlus,4)./sqrt(sum(tau.^2,4))./sqrt(sum(sPlus.^2,4))).^2,4));
 % distance as the mean of the distance to mirror state respectively
 relW = (normalizeStokes(sPlus-MP2) + normalizeStokes(sMinus-MP2))/2;
 maskMpa = relW>MPAthre;
 % mask out regions with low reliability
+mask = mean(dop2,3)>.8;
+mask(1:clipLimit,:) = 0;
+mask(end-clipLimit:end,:) = 0;
 dim = size(tau);
 mid = ceil(dim(3)/2);
+%
 maskDop = dop2>0.8;
 taucorr = tau;
 out.binRet2 = normalizeStokes(tau);
@@ -205,7 +228,7 @@ out.binError2 = sum(squeeze(sum(tauErr)));
 out.rcorrglobal2 = rcorrglobal;
 out.avgWeg2 = avgWeg;
 out.relW2 = relW;
-ret2 = sqrt(sum(taumean.^2,3))*0.0239/2/dz;
+ret2 = sqrt(sum(taumean.^2,3))*0.0239;
 % ret2(sum(avgWeg,3)<30) = 0;
 out.ret2 = ret2;
 %% differenciate which channle

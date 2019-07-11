@@ -4,8 +4,11 @@ load('FilesR1.mat');
 sourcePath = 'D:\MGH DATA\SharingData';
 DataSetName = importdata('FilesNameForComparison.mat');
 addpath('D:\mirror state processing\single input processing toolbox')
-%% choose what reliablility metric to be used
-relMetric = 'dist';  % sina means using reliability metric associated with sina, and dist means using metric associated with distance metric
+%
+%
+%% ===============================setting parameters for the processing===================================================================== 
+%--choose what reliablility metric to be used
+relMetric = 'sina';  % sina means using reliability metric associated with sina, and dist means using metric associated with distance metric
 if strcmp(relMetric,'sina')
     load('D:\mirror state processing\Reliability metric generation\RelMetsina.mat')
     pst.relm = 'sina';
@@ -14,11 +17,16 @@ else
     pst.relm = 'dist';
 end
 pst.Apval = Apval; pst.Bpval = Bpval;
-%%
-makeOrth = 0; %% no making orthognal, this feature was used for testing and will be removed in the nearly future.
+%chose approximate or accurate mode to reconstruct local reatardation
+pst.mode = 'approximate'; %% approximate or accurate mode
+%--make orthogonal or not, this will be removed afterwards
+makeOrth = 0; %% no making orthognal.
+%% =========================================================================================================================================
+%
+%
 %%load mirror state
 load('Binned Mirror state.mat')
-outcomeName = 'normal';
+outcomeName = pst.mode;
 %%create a folder for the results repository
 resultFolderName = ['Intravascular ', datestr(now,29), relMetric];
 preDir = pwd; cd('D:\SingleInputProcessingResults');mkdir(resultFolderName);cd(resultFolderName);mkdir('Numerical');mkdir('images');cd(preDir);
@@ -36,7 +44,7 @@ Ret1 = []; Ret2 = []; Ret3 = [];Rel2 = []; Rel3 = [];
 set(0,'DefaultFigureVisible', 'off');
 MPindex = 1:43;
 fileNo = 0;
-for fInd = 1:length(MsmtR)
+for fInd = 1:5
     fInd
     path = fullfile(sourcePath,MsmtR{fInd}(1:6),MsmtR{fInd});
     temp = contains(DataSetName,string(MsmtR{fInd}));
